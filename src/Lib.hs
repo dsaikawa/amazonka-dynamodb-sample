@@ -3,7 +3,8 @@
 {-# LANGUAGE DataKinds                  #-}
 
 module Lib
-  ( doListTables
+  ( doCreateTable
+  , doListTables
   , doCreateBackup
   , doGetItem
   , doPutItem
@@ -27,7 +28,7 @@ import qualified Data.HashMap.Strict           as Map
                                                 , fromList
                                                 )
 import           Data.List.NonEmpty            as N
-                                                ( NonEmpty
+                                                ( NonEmpty((:|))
                                                 , nonEmpty
                                                 , repeat
                                                 )
@@ -64,7 +65,9 @@ import           Network.AWS.DynamoDB          as DynamoDB
                                                 , ListTablesResponse
                                                 , ProvisionedThroughput
                                                 , PutItemResponse
+                                                , ScalarAttributeType(S)
                                                 , UpdateItemResponse
+                                                , attributeDefinition
                                                 , attributeValue
                                                 , avN
                                                 , avNS
@@ -72,6 +75,9 @@ import           Network.AWS.DynamoDB          as DynamoDB
                                                 , createBackup
                                                 , createGlobalTable
                                                 , createTable
+                                                , ctAttributeDefinitions
+                                                , ctKeySchema
+                                                , ctProvisionedThroughput
                                                 , deleteItem
                                                 , describeTable
                                                 , diKey
@@ -92,6 +98,17 @@ import           Network.AWS.DynamoDB.Types     ( AttributeValue )
 import           System.Environment             ( getEnv )
 
 
+doCreateTable :: Env -> Text.Text -> IO CreateTableResponse
+doCreateTable env tableName = do
+  runResourceT
+    $  runAWS env
+    $  within Tokyo
+    $  send
+    $  createTable tableName
+                   (keySchemaElement "id" Hash :| [])
+                   (provisionedThroughput 5 5)
+    &  ctAttributeDefinitions
+    .~ [attributeDefinition "id" S]
 
 -- |
 -- テーブルの一覧を配列で返す関数

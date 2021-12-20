@@ -12,51 +12,15 @@ AWS の Dynamodb を使用するための Haskell のライブラリを使用し
     $ docker pull amazon/dynamodb-local
     $ docker run -d --name dynamodb -p 8000:8000 amazon/dynamodb-local
     ```
-- AWS CLI を使用して以下の情報のテーブルを作成。
-    ``` shell-session
-    env AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummykey \
-    aws dynamodb create-table \
-    --region ap-northeast-1 \
-    --endpoint-url http://localhost:8000 \
-    --table-name fuga \
-    --key-schema AttributeName=id,KeyType=HASH \
-    --attribute-definitions AttributeName=id,AttributeType=S \
-    --billing-mode PAY_PER_REQUEST
+- accesskey と secretkey を環境変数に設定する。
+    ``` shell session
+    $ export AWS_ACCESS_KEY=dummy
+    $ export AWS_SECRET_KEY=dummykey
     ```
-- 作成したテーブル情報
-    ``` json
-    {
-        "TableDescription": {
-            "AttributeDefinitions": [
-                {
-                    "AttributeName": "id",
-                    "AttributeType": "S"
-                }
-            ],
-            "TableName": "fuga",
-            "KeySchema": [
-                {
-                    "AttributeName": "id",
-                    "KeyType": "HASH"
-                }
-            ],
-            "TableStatus": "ACTIVE",
-            "CreationDateTime": 1639964521.578,
-            "ProvisionedThroughput": {
-                "LastIncreaseDateTime": 0.0,
-                "LastDecreaseDateTime": 0.0,
-                "NumberOfDecreasesToday": 0,
-                "ReadCapacityUnits": 0,
-                "WriteCapacityUnits": 0
-            },
-            "TableSizeBytes": 0,
-            "ItemCount": 0,
-            "TableArn": "arn:aws:dynamodb:ddblocal:000000000000:table/fuga",
-            "BillingModeSummary": {
-                "BillingMode": "PAY_PER_REQUEST",
-                "LastUpdateToPayPerRequestDateTime": 1639964521.578
-            }
-        }
-    }
+
+- 実行
+    ``` shell seiion 
+    $ stack build
+    $ stack run
     ```
 
