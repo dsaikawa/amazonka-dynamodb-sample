@@ -1,7 +1,6 @@
 # amazonka-dynamodb-test
 AWS の Dynamodb を使用するための Haskell のライブラリを使用したサンプルです。  
 実行するために haskell-stack の動作環境が必要です。  
-また、テーブルを作成する際に AWS CLI も使用しています。
 # Usage
 - このサンプルを実行する際に以下を実行し "zlib1g-dev" ライブラリをインストールしておく必要がある。  
     ``` shell-session
