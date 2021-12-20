@@ -11,7 +11,7 @@ import           Lib                            ( doCreateBackup
                                                 , doPutItem
                                                 , doUpdateItem
                                                 )
-import           Network.AWS                    ( Credentials(FromKeys)
+import           Network.AWS                    ( Credentials(FromEnv, FromKeys)
                                                 , Service
                                                 , configure
                                                 , newEnv
@@ -24,8 +24,9 @@ dynamo = setEndpoint False "localhost" 8000 dynamoDB
 
 main :: IO ()
 main = do
-  env <- newEnv (FromKeys "dummy" "dummykey") <&> configure dynamo
-  ex  <- doListTables env
+  env <- newEnv (FromEnv "AWS_ACCESS_KEY" "AWS_SECRET_KEY" Nothing Nothing)
+    <&> configure dynamo
+  ex <- doListTables env
 -- ex <- doDescribeTable env "fuga"
 -- ex <- doGetItem env "fuga"
 -- ex <- doPutItem env "fuga"
