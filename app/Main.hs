@@ -6,6 +6,7 @@ import           Control.Lens                   ( (<&>) )
 import           Lib                            ( doCreateBackup
                                                 , doCreateTable
                                                 , doDeleteItem
+                                                , doDeleteTable
                                                 , doDescribeTable
                                                 , doGetItem
                                                 , doListTables
@@ -27,12 +28,14 @@ main :: IO ()
 main = do
   env <- newEnv (FromEnv "AWS_ACCESS_KEY" "AWS_SECRET_KEY" Nothing Nothing)
     <&> configure dynamo
-  -- ex <- doCreateTable env "hoge"
-  ex <- doListTables env
-  -- ex <- doDescribeTable env "fuga"
-  -- ex <- doGetItem env "fuga"
-  -- ex <- doPutItem env "fuga"
-  -- ex <- doUpdateItem env "fuga"
-  -- ex <- doDeleteItem env "fuga"
-  -- ex <- doCreateBackup env "fuga"
-  print ex
+  doCreateTable env "fuga" >>= print
+  doListTables env >>= print
+  doDescribeTable env "fuga" >>= print
+  doPutItem env "fuga" "123" >>= print
+  doGetItem env "fuga" "123" >>= print
+  doUpdateItem env "fuga" "123" "456"
+  doGetItem env "fuga" "123" >>= print
+  doDeleteItem env "fuga" "456" >>= print
+  doDescribeTable env "fuga" >>= print
+  doDeleteTable env "fuga" >>= print
+  doListTables env >>= print

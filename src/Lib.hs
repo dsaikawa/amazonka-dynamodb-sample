@@ -11,6 +11,7 @@ module Lib
   , doDeleteItem
   , doUpdateItem
   , doDescribeTable
+  , doDeleteTable
   ) where
 
 import           Control.Lens                   ( (.~)
@@ -20,6 +21,7 @@ import           Control.Lens                   ( (.~)
 import           Control.Lens.Lens              ( (&)
                                                 , (<&>)
                                                 )
+import           Data.Aeson.Encoding            ( value )
 import           Data.Aeson.Types               ( Value(String)
                                                 , parseJSON
                                                 )
@@ -58,6 +60,7 @@ import           Network.AWS.DynamoDB          as DynamoDB
                                                 ( CreateBackupResponse
                                                 , CreateTableResponse
                                                 , DeleteItemResponse
+                                                , DeleteTableResponse
                                                 , DescribeTableResponse
                                                 , GetItemResponse
                                                 , KeySchemaElement
@@ -79,6 +82,7 @@ import           Network.AWS.DynamoDB          as DynamoDB
                                                 , ctKeySchema
                                                 , ctProvisionedThroughput
                                                 , deleteItem
+                                                , deleteTable
                                                 , describeTable
                                                 , diKey
                                                 , dynamoDB
@@ -110,6 +114,10 @@ doCreateTable env tableName = do
     &  ctAttributeDefinitions
     .~ [attributeDefinition "id" S]
 
+doDeleteTable :: Env -> Text.Text -> IO DeleteTableResponse
+doDeleteTable env tableName = do
+  runResourceT $ runAWS env $ within Tokyo $ send $ deleteTable tableName
+
 -- |
 -- テーブルの一覧を配列で返す関数
 doListTables :: Env -> IO ListTablesResponse
@@ -124,8 +132,8 @@ doDescribeTable env tableName = do
 
 -- |
 -- 指定された主キーを持つ item を返す関数
-doGetItem :: Env -> Text.Text -> IO GetItemResponse
-doGetItem env tableName = do
+doGetItem :: Env -> Text.Text -> Text.Text -> IO GetItemResponse
+doGetItem env tableName value = do
   runResourceT
     $  runAWS env
     $  within Tokyo
@@ -133,25 +141,25 @@ doGetItem env tableName = do
     $  getItem tableName
     &  giKey
     .~ key
-  where key = Map.fromList [("id", attributeValue & avS .~ Just "456")]
+  where key = Map.fromList [("id", attributeValue & avS .~ Just value)]
 
 -- |
 -- item の作成か、古い item の更新を行う関数
-doPutItem :: Env -> Text.Text -> IO PutItemResponse
-doPutItem env tableName = do
+doPutItem :: Env -> Text.Text -> Text.Text -> IO PutItemResponse
+doPutItem env tableName value = do
   runResourceT
     $  runAWS env
     $  within Tokyo
     $  send
     $  putItem tableName
     &  piItem
-    .~ key
-  where key = Map.fromList [("id", attributeValue & (avS ?~ "789"))]
+    .~ item
+  where item = Map.fromList [("id", attributeValue & (avS ?~ value))]
 
 -- |
 -- テーブル内の item を削除する関数
-doDeleteItem :: Env -> Text.Text -> IO DeleteItemResponse
-doDeleteItem env tableName = do
+doDeleteItem :: Env -> Text.Text -> Text.Text -> IO DeleteItemResponse
+doDeleteItem env tableName value = do
   runResourceT
     $  runAWS env
     $  within Tokyo
@@ -159,14 +167,15 @@ doDeleteItem env tableName = do
     $  deleteItem tableName
     &  diKey
     .~ key
-  where key = Map.fromList [("id", attributeValue & avS .~ Just "789")]
+  where key = Map.fromList [("id", attributeValue & avS .~ Just value)]
 
 -- |
 -- item の更新追加を行う関数(https://docs.aws.amazon.com/ja_jp/amazondynamodb/latest/developerguide/Expressions.UpdateExpressions.html)
 -- uiUpdateExpression の内容は以下のリンクを参照
 -- https://hackage.haskell.org/package/amazonka-dynamodb-1.6.1/docs/Network-AWS-DynamoDB-UpdateItem.html#v:updateItem
-doUpdateItem :: Env -> Text.Text -> IO UpdateItemResponse
-doUpdateItem env tableName = do
+doUpdateItem
+  :: Env -> Text.Text -> Text.Text -> Text.Text -> IO UpdateItemResponse
+doUpdateItem env tableName value newValue = do
   runResourceT
     $  runAWS env
     $  within Tokyo
@@ -174,13 +183,13 @@ doUpdateItem env tableName = do
     $  updateItem tableName
     &  uiKey
     .~ key
-    &  uiUpdateExpression
-    .~ Just "ADD nn :a"
+    &  (uiUpdateExpression ?~ "ADD countNumber :aaa")
     &  uiExpressionAttributeValues
     .~ exportAttrValues
  where
-  key              = Map.fromList [("id", attributeValue & avS .~ Just "789")]
-  exportAttrValues = Map.fromList [(":a", attributeValue & avNS .~ ["333"])]
+  key = Map.fromList [("id", attributeValue & (avS ?~ value))]
+  exportAttrValues =
+    Map.fromList [(":aaa", attributeValue & (avN ?~ newValue))]
 
 
 -- |
