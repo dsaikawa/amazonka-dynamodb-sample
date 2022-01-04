@@ -18,6 +18,17 @@ packages:
       sha256: 9d970bf5f98e68e8fc129b04d6c9d8eb1e641c7556ffd0f0a168a259335b6fd7
   original:
     hackage: unliftio-core-0.1.2.0@sha256:b0a7652ffce2284a6cebe05c99eb60573a8fb6631163f34b0b30a80b4a78cb23,1081
+- completed:
+    name: dynamodb-simple
+    version: 0.6.0.3
+    git: https://github.com/satosystems/dynamodb-simple.git
+    pantry-tree:
+      size: 1990
+      sha256: 43a457e99e25c5ff7dcf5f28b517dc876a3438f3966de7af5726e42a959194e9
+    commit: 3282e2248ae4a09265a92fab84b327b51b389030
+  original:
+    git: https://github.com/satosystems/dynamodb-simple.git
+    commit: 3282e2248ae4a09265a92fab84b327b51b389030
 snapshots:
 - completed:
     size: 586296

@@ -2,9 +2,12 @@
 
 module Main where
 
-import           Control.Lens                   ( (<&>) )
-import           Lib                            ( doCreateBackup
-                                                , doCreateTable
+import           Control.Exception.Safe         ( catchAny )
+import           Control.Lens                   ( (&)
+                                                , set
+                                                )
+import           Data.Proxy                     ( Proxy(Proxy) )
+import           Lib                            ( doCreateTable
                                                 , doDeleteItem
                                                 , doDeleteTable
                                                 , doDescribeTable
@@ -13,29 +16,59 @@ import           Lib                            ( doCreateBackup
                                                 , doPutItem
                                                 , doUpdateItem
                                                 )
-import           Network.AWS                    ( Credentials(FromEnv, FromKeys)
+import           Network.AWS                    ( Credentials(Discover)
+                                                , HasEnv(envLogger)
+                                                , LogLevel(Debug)
                                                 , Service
                                                 , configure
                                                 , newEnv
+                                                , newLogger
                                                 , setEndpoint
                                                 )
 import           Network.AWS.DynamoDB           ( dynamoDB )
+import           System.Environment             ( setEnv )
+import           System.IO                      ( stdout )
+
+import           Person                         ( LL(LL)
+                                                , Person(Person)
+                                                , defaultLL
+                                                )
 
 dynamo :: Service
 dynamo = setEndpoint False "localhost" 8000 dynamoDB
 
 main :: IO ()
 main = do
-  env <- newEnv (FromEnv "AWS_ACCESS_KEY" "AWS_SECRET_KEY" Nothing Nothing)
-    <&> configure dynamo
-  doCreateTable env "fuga" >>= print
-  doListTables env >>= print
-  doDescribeTable env "fuga" >>= print
-  doPutItem env "fuga" "123" >>= print
-  doGetItem env "fuga" "123" >>= print
-  doUpdateItem env "fuga" "123" "456"
-  doGetItem env "fuga" "123" >>= print
-  doDeleteItem env "fuga" "456" >>= print
-  doDescribeTable env "fuga" >>= print
-  doDeleteTable env "fuga" >>= print
-  doListTables env >>= print
+  setEnv "AWS_ACCESS_KEY_ID"     "hoge"
+  setEnv "AWS_SECRET_ACCESS_KEY" "hoge"
+  logger <- newLogger Debug stdout
+  env    <- newEnv Discover
+  let env' = env & configure dynamo & set envLogger logger
+  putStrLn "------------ 00"
+  (doDeleteTable env' (Proxy :: Proxy Person) >>= print)
+    `catchAny` (\_ -> return ())
+  putStrLn "------------ 01"
+  doCreateTable env'
+  putStrLn "------------ 02"
+  doListTables env' >>= print
+  putStrLn "------------ 03"
+  doDescribeTable env' "Person" >>= print
+  putStrLn "------------ 04"
+  doPutItem env' (Person "foo" 42 defaultLL) >>= print
+  putStrLn "------------ 05"
+  doGetItem env' "foo" 42 >>= print
+  putStrLn "------------ 06"
+  doGetItem env' "bar" 13 >>= print
+  putStrLn "------------ 07"
+  doUpdateItem env' (Person "foo" 42 (LL 1 2)) >>= print
+  putStrLn "------------ 08"
+  doGetItem env' "foo" 42 >>= print
+  putStrLn "------------ 09"
+  doDeleteItem env' "foo" 42 >>= print
+  putStrLn "------------ 10"
+  doDescribeTable env' "Person" >>= print
+  putStrLn "------------ 11"
+  doDeleteTable env' (Proxy :: Proxy Person) >>= print
+  putStrLn "------------ 12"
+  doListTables env' >>= print
+  putStrLn "------------ 13"
